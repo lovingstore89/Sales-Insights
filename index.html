@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard ยอดขาย เอนเกจ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f0f2f5; color: #1a1a2e; }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    padding: 20px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo { font-size: 28px; }
+  .header-title h1 { color: #fff; font-size: 22px; font-weight: 700; }
+  .header-title p { color: #a0aec0; font-size: 13px; margin-top: 2px; }
+  .header-badge {
+    background: #e94560; color: #fff;
+    padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  }
+
+  /* ===== MONTH TABS ===== */
+  .month-nav { background: #fff; border-bottom: 2px solid #e2e8f0; padding: 0 32px; }
+  .month-tabs { display: flex; gap: 0; overflow-x: auto; }
+  .month-tab {
+    padding: 14px 24px; font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; background: none; color: #718096;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    transition: all 0.2s; white-space: nowrap;
+  }
+  .month-tab:hover { color: #0f3460; }
+  .month-tab.active { color: #0f3460; border-bottom-color: #e94560; }
+  .month-tab.add-month {
+    color: #a0aec0; border: 2px dashed #e2e8f0; border-radius: 8px;
+    margin: 8px 0; padding: 6px 16px; font-size: 13px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .month-tab.add-month:hover { border-color: #0f3460; color: #0f3460; background: #f7fafc; }
+
+  /* ===== MAIN CONTENT ===== */
+  .main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+  .section-title {
+    font-size: 16px; font-weight: 700; color: #2d3748;
+    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: #e2e8f0;
+  }
+
+  /* ===== KPI CARDS ===== */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .kpi-card {
+    background: #fff; border-radius: 14px; padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 4px solid #e2e8f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.10); }
+  .kpi-card.shopee { border-left-color: #ee4d2d; }
+  .kpi-card.lazada { border-left-color: #0f146b; }
+  .kpi-card.facebook { border-left-color: #1877f2; }
+  .kpi-card.combined { border-left-color: #38a169; }
+  .kpi-label { font-size: 12px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .kpi-platform { font-size: 11px; margin-bottom: 8px; }
+  .kpi-platform.shopee { color: #ee4d2d; }
+  .kpi-platform.lazada { color: #0f146b; }
+  .kpi-platform.facebook { color: #1877f2; }
+  .kpi-platform.combined { color: #38a169; }
+  .kpi-value { font-size: 26px; font-weight: 800; color: #1a1a2e; line-height: 1.2; }
+  .kpi-sub { font-size: 12px; color: #718096; margin-top: 4px; }
+  .badge-up { color: #38a169; font-weight: 700; }
+  .badge-down { color: #e53e3e; font-weight: 700; }
+
+  /* ===== PLATFORM ROW ===== */
+  .platform-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .platform-section {
+    background: #fff; border-radius: 14px; padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .platform-header {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid #f0f0f0;
+  }
+  .platform-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .platform-icon.shopee { background: #fff3f0; }
+  .platform-icon.lazada { background: #f0f2ff; }
+  .platform-name { font-size: 16px; font-weight: 700; }
+  .platform-period { font-size: 12px; color: #718096; }
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .metric-item { text-align: center; padding: 10px; background: #f7fafc; border-radius: 10px; }
+  .metric-item-label { font-size: 11px; color: #718096; margin-bottom: 4px; }
+  .metric-item-value { font-size: 17px; font-weight: 700; color: #1a1a2e; }
+
+  /* ===== CHARTS ===== */
+  .chart-row { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .chart-box {
+    background: #fff; border-radius: 14px; padding: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .chart-box.full { grid-column: 1 / -1; }
+  .chart-title { font-size: 14px; font-weight: 700; color: #2d3748; margin-bottom: 16px; }
+  .chart-wrap { position: relative; }
+
+  /* ===== FACEBOOK SECTION ===== */
+  .fb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .fb-card {
+    background: #fff; border-radius: 14px; padding: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 3px solid #1877f2;
+  }
+  .fb-card-label { font-size: 12px; color: #718096; margin-bottom: 6px; font-weight: 600; }
+  .fb-card-value { font-size: 24px; font-weight: 800; color: #1a1a2e; }
+  .fb-card-change { font-size: 12px; margin-top: 4px; }
+
+  /* ===== FUNNEL ===== */
+  .funnel-row { display: flex; align-items: center; gap: 0; margin-bottom: 20px; }
+  .funnel-step {
+    flex: 1; background: #fff; border-radius: 14px; padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;
+    border-top: 3px solid;
+  }
+  .funnel-step:nth-child(1) { border-top-color: #1877f2; }
+  .funnel-step:nth-child(3) { border-top-color: #38a169; }
+  .funnel-step:nth-child(5) { border-top-color: #f6ad55; }
+  .funnel-step:nth-child(7) { border-top-color: #e94560; }
+  .funnel-arrow {
+    font-size: 20px; color: #cbd5e0; padding: 0 8px;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .funnel-rate { font-size: 11px; color: #718096; }
+  .funnel-label { font-size: 12px; color: #718096; margin-bottom: 4px; }
+  .funnel-value { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+
+  /* ===== DAILY TABLE ===== */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    background: #f7fafc; padding: 10px 12px; text-align: left;
+    font-weight: 700; color: #4a5568; border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.15s; }
+  tbody tr:hover { background: #f7fafc; }
+  tbody td { padding: 9px 12px; color: #2d3748; }
+  .td-num { text-align: right; }
+  .bar-inline {
+    display: inline-block; height: 8px; border-radius: 4px;
+    background: linear-gradient(90deg, #ee4d2d, #ff8c6b);
+    vertical-align: middle; margin-right: 6px;
+  }
+  .bar-inline.lz { background: linear-gradient(90deg, #0f146b, #4a52d9); }
+
+  /* ===== FOOTER ===== */
+  .footer {
+    text-align: center; padding: 20px; color: #a0aec0; font-size: 12px;
+    border-top: 1px solid #e2e8f0; margin-top: 8px;
+  }
+
+  /* ===== SHOPEE PRODUCT SECTION ===== */
+  .source-summary-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px;
+  }
+  .source-card {
+    background: #fff; border-radius: 12px; padding: 16px 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 3px solid #ee4d2d;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .source-card.live { border-top-color: #e53e3e; }
+  .source-card.video { border-top-color: #805ad5; }
+  .source-card.partner { border-top-color: #38a169; }
+  .source-card.ads { border-top-color: #f6ad55; }
+  .source-card-label { font-size: 12px; color: #718096; font-weight: 600; }
+  .source-card-value { font-size: 20px; font-weight: 800; color: #1a1a2e; }
+  .source-card-pct { font-size: 12px; color: #a0aec0; }
+
+  .product-tabs { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .product-tab {
+    padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 600;
+    cursor: pointer; border: 2px solid #e2e8f0; background: #fff; color: #718096;
+    transition: all 0.2s;
+  }
+  .product-tab:hover { border-color: #ee4d2d; color: #ee4d2d; }
+  .product-tab.active { background: #ee4d2d; color: #fff; border-color: #ee4d2d; }
+  .product-tab.live.active { background: #e53e3e; border-color: #e53e3e; }
+  .product-tab.video.active { background: #805ad5; border-color: #805ad5; }
+  .product-tab.partner.active { background: #38a169; border-color: #38a169; }
+
+  .product-table-wrap { overflow-x: auto; }
+  .product-section { display: none; }
+  .product-section.active { display: block; }
+
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700;
+    background: #f7fafc; color: #4a5568;
+  }
+  .rank-badge.gold { background: #fef3c7; color: #b45309; }
+  .rank-badge.silver { background: #f1f5f9; color: #475569; }
+  .rank-badge.bronze { background: #fef7ed; color: #c2410c; }
+
+  .product-name-cell { max-width: 300px; }
+  .product-name-short { font-weight: 600; font-size: 13px; color: #1a1a2e; }
+  .product-id { font-size: 11px; color: #a0aec0; margin-top: 2px; }
+
+  .pct-bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .pct-bar-bg {
+    flex: 1; height: 8px; background: #f0f0f0; border-radius: 4px; overflow: hidden;
+    min-width: 60px;
+  }
+  .pct-bar-fill { height: 100%; border-radius: 4px; background: #ee4d2d; }
+  .pct-bar-fill.video { background: #805ad5; }
+  .pct-bar-fill.partner { background: #38a169; }
+
+  .no-data {
+    text-align: center; padding: 60px 20px; color: #a0aec0;
+  }
+  .no-data .icon { font-size: 48px; margin-bottom: 12px; }
+  .no-data p { font-size: 15px; margin-bottom: 6px; }
+  .no-data small { font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .platform-row { grid-template-columns: 1fr; }
+    .chart-row { grid-template-columns: 1fr; }
+    .fb-grid { grid-template-columns: repeat(2, 1fr); }
+    .main { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📊</div>
+    <div class="header-title">
+      <h1>Dashboard รวมข้อมูลยอดขาย & ข้อมูลเชิงลึก</h1>
+      <p>เอนเกจ · Shopee · Lazada · Facebook</p>
+    </div>
+  </div>
+  <div class="header-badge" id="activePeriod">พฤษภาคม 2026</div>
+</div>
+
+<!-- MONTH NAV -->
+<div class="month-nav">
+  <div class="month-tabs" id="monthTabs"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main" id="mainContent"></div>
+
+<div class="footer">อัปเดตล่าสุด: มิถุนายน 2026 · เพิ่มข้อมูลเดือนใหม่ได้ในไฟล์ DATA ด้านล่าง</div>
+
+<script>
+// ============================================================
+// DATA — เพิ่มข้อมูลเดือนใหม่ที่นี่
+// ============================================================
+const ALL_DATA = {
+
+  "2026-05": {
+    label: "พฤษภาคม 2026",
+    short: "พ.ค. 26",
+
+    shopee: {
+      summary: {
+        totalSales: 1933602,
+        confirmedSales: 1695798,
+        paidSales: 1643036,
+        totalOrders: 958,
+        avgOrderValue: 2018.37,
+        clicks: 17589,
+        visitors: 7185,
+        conversionRate: "5.45%",
+        cancelledOrders: 135,
+        cancelledSales: 396951,
+        buyers: 716,
+        newBuyers: 448,
+        repeatBuyers: 268,
+        repeatRate: "19.83%",
+      },
+      daily: [
+        {d:"01/05",s:46136,o:36,v:302},
+        {d:"02/05",s:48086,o:26,v:320},
+        {d:"03/05",s:83124,o:42,v:302},
+        {d:"04/05",s:60354,o:35,v:367},
+        {d:"05/05",s:190331,o:61,v:399},
+        {d:"06/05",s:231982,o:55,v:347},
+        {d:"07/05",s:87259,o:36,v:348},
+        {d:"08/05",s:96982,o:31,v:308},
+        {d:"09/05",s:57470,o:32,v:301},
+        {d:"10/05",s:32192,o:21,v:293},
+        {d:"11/05",s:55258,o:27,v:373},
+        {d:"12/05",s:50946,o:30,v:351},
+        {d:"13/05",s:9303,o:18,v:323},
+        {d:"14/05",s:38084,o:24,v:337},
+        {d:"15/05",s:88996,o:31,v:351},
+        {d:"16/05",s:47822,o:27,v:288},
+        {d:"17/05",s:48961,o:28,v:289},
+        {d:"18/05",s:40999,o:33,v:353},
+        {d:"19/05",s:53922,o:31,v:343},
+        {d:"20/05",s:39404,o:23,v:304},
+        {d:"21/05",s:45925,o:20,v:368},
+        {d:"22/05",s:36485,o:30,v:285},
+        {d:"23/05",s:34616,o:22,v:311},
+        {d:"24/05",s:13039,o:16,v:283},
+        {d:"25/05",s:77190,o:36,v:372},
+        {d:"26/05",s:88977,o:27,v:310},
+        {d:"27/05",s:56010,o:30,v:322},
+        {d:"28/05",s:32203,o:33,v:288},
+        {d:"29/05",s:69215,o:45,v:278},
+        {d:"30/05",s:37290,o:30,v:294},
+        {d:"31/05",s:35041,o:22,v:241},
+      ]
+    },
+
+    lazada: {
+      summary: {
+        totalSales: 269864.22,
+        visitors: 1856,
+        buyers: 77,
+        orders: 104,
+        pageviews: 6725,
+        unitsSold: 622,
+        conversionRate: "4.15%",
+        avgOrderValue: 2594.85,
+        valuePerVisitor: 145.40,
+        cancelledSales: 6084,
+        returnedSales: 0,
+      },
+      daily: [
+        {d:"01/05",s:10198,o:9,v:63},
+        {d:"02/05",s:2520,o:4,v:94},
+        {d:"03/05",s:1627,o:2,v:68},
+        {d:"04/05",s:29554,o:2,v:94},
+        {d:"05/05",s:8178,o:2,v:74},
+        {d:"06/05",s:13672,o:5,v:80},
+        {d:"07/05",s:10594,o:6,v:70},
+        {d:"08/05",s:7911,o:3,v:76},
+        {d:"09/05",s:31990,o:2,v:75},
+        {d:"10/05",s:4308,o:4,v:131},
+        {d:"11/05",s:900,o:3,v:99},
+        {d:"12/05",s:3197,o:2,v:91},
+        {d:"13/05",s:5079,o:6,v:76},
+        {d:"14/05",s:9821,o:5,v:82},
+        {d:"15/05",s:6680,o:5,v:63},
+        {d:"16/05",s:8004,o:5,v:62},
+        {d:"17/05",s:4137,o:3,v:61},
+        {d:"18/05",s:9668,o:5,v:61},
+        {d:"19/05",s:4330,o:1,v:63},
+        {d:"20/05",s:1561,o:2,v:55},
+        {d:"21/05",s:2020,o:1,v:90},
+        {d:"22/05",s:348,o:1,v:79},
+        {d:"23/05",s:19138,o:5,v:74},
+        {d:"24/05",s:48029,o:4,v:84},
+        {d:"25/05",s:3549,o:3,v:84},
+        {d:"26/05",s:12335,o:2,v:61},
+        {d:"27/05",s:2178,o:1,v:71},
+        {d:"28/05",s:541,o:3,v:83},
+        {d:"29/05",s:5711,o:5,v:75},
+        {d:"30/05",s:1679,o:2,v:92},
+        {d:"31/05",s:408,o:1,v:59},
+      ]
+    },
+
+    facebook: {
+      reach: 160702,
+      reachChange: -19.4,
+      audience: 87714,
+      audienceChange: -17.2,
+      interactions: 205,
+      interactionsChange: -18.7,
+      clicks: 964,
+      clicksChange: 9.7,
+      paid: 1300,
+      paidChange: 16.7,
+      newFollowers: 47,
+      newFollowersChange: 20.5,
+      organicReach: 9946,
+      adReach: 150756,
+      watchTime3s: 1800,
+      watchTime3sChange: 194.1,
+      watchDuration: "13 ชม. 4 นาที",
+      watchDurationChange: 267.7,
+      conversions: {
+        adClicks: 852,
+        messages: 117,
+        messagesRate: "13.7%",
+        leads: 0,
+        leadsRate: "0.0%",
+        purchases: 3,
+      },
+      newContacts: 80,
+      newContactsChange: -17.5,
+      conversationStarts: 134,
+      conversationStartsChange: 1.5,
+    },
+
+    shopeeProductShare: {
+      summary: {
+        total: 1933602,
+        detail: 1719817,
+        live: 0,
+        video: 155182,
+        partner: 58603,
+        ads: 763258,
+      },
+      detail: [
+        { id:'23472801868', name:'Bluelab รวมอุปกรณ์และปากกาวัดค่า pH Tds Ec Meter One Pen', pct:'7.65%', sales:'131,536', impressions:'19,253', clicks:774, orders:23.83, units:34, ctr:'4.02%', cvr:'3.08%', avgOrder:'5,518.99', buyers:26 },
+        { id:'21081768011', name:'Bluelab อุปกรณ์วัดค่าเชิงอุตสาหกรรม Combo Meter Guardian Wifi', pct:'4.71%', sales:'80,956', impressions:'14,950', clicks:464, orders:6.50, units:8, ctr:'3.10%', cvr:'1.40%', avgOrder:'12,454.77', buyers:7 },
+        { id:'20588223519', name:'Athena Pro Bloom บำรุงดอก 0-12-24 ขนาด 10 และ 25 ปอนด์', pct:'3.83%', sales:'65,795', impressions:'3,428', clicks:126, orders:7.50, units:9, ctr:'3.68%', cvr:'5.95%', avgOrder:'8,772.67', buyers:6 },
+        { id:'5231551716',  name:'VFLOW FAN พัดลมระบายอากาศ 4/6/8 นิ้ว เสียงเงียบ Exhaust fan', pct:'3.70%', sales:'63,713', impressions:'15,316', clicks:910, orders:20.50, units:23, ctr:'5.94%', cvr:'2.25%', avgOrder:'3,107.95', buyers:17 },
+        { id:'3129938906',  name:'ตัวกรองอากาศคาร์บอน 4/6/8 นิ้ว Carbon Filter กำจัดกลิ่น', pct:'3.36%', sales:'57,826', impressions:'5,832', clicks:405, orders:17.40, units:31, ctr:'6.94%', cvr:'4.30%', avgOrder:'3,323.33', buyers:18 },
+      ],
+      live: [],
+      video: [
+        { id:'18865984647', name:'เครื่องดูดความชื้นอุตสาหกรรม 58/90/150 ลิตร/วัน Industrial Dehumidifier', pct:'58.80%', sales:'91,250', impressions:'14', clicks:3, orders:3, units:3, ctr:'21.43%', cvr:'100.00%', avgOrder:'30,416.67', buyers:1 },
+        { id:'17234790765', name:'HM pH Meter PH-80 ปากกาวัดค่า pH กรด-ด่าง กันน้ำ HM Digital', pct:'7.37%', sales:'11,440', impressions:'176', clicks:46, orders:10.50, units:11, ctr:'26.14%', cvr:'22.83%', avgOrder:'1,089.52', buyers:11 },
+        { id:'23472801868', name:'Bluelab รวมอุปกรณ์และปากกาวัดค่า pH Tds Ec Meter One Pen', pct:'4.75%', sales:'7,375', impressions:'124', clicks:26, orders:1.50, units:2, ctr:'20.97%', cvr:'5.77%', avgOrder:'4,916.67', buyers:2 },
+        { id:'18095317119', name:'Athena IPM น้ำยาทำความสะอาดใบไม้ ฉีดพ่นทางใบ 32 ออนซ์', pct:'4.34%', sales:'6,740', impressions:'4', clicks:4, orders:2, units:2, ctr:'100.00%', cvr:'50.00%', avgOrder:'3,370.00', buyers:1 },
+        { id:'3129938906',  name:'ตัวกรองอากาศคาร์บอน 4/6/8 นิ้ว Carbon Filter กำจัดกลิ่น', pct:'3.31%', sales:'5,130', impressions:'158', clicks:48, orders:3, units:3, ctr:'30.38%', cvr:'6.25%', avgOrder:'1,710.00', buyers:3 },
+      ],
+      partner: [
+        { id:'25119678845', name:'DAB PUMP ปั้มน้ำอัจฉริยะจากอิตาลี สำหรับที่พักอาศัยและเกษตรกรรม', pct:'51.33%', sales:'30,080', impressions:'50', clicks:17, orders:1, units:1, ctr:'34.00%', cvr:'5.88%', avgOrder:'30,080.00', buyers:1 },
+        { id:'20588223519', name:'Athena Pro Bloom บำรุงดอก 0-12-24 ขนาด 10 และ 25 ปอนด์', pct:'25.53%', sales:'14,960', impressions:'7', clicks:4, orders:2, units:2, ctr:'57.14%', cvr:'50.00%', avgOrder:'7,480.00', buyers:1 },
+        { id:'23472801868', name:'Bluelab รวมอุปกรณ์และปากกาวัดค่า pH Tds Ec Meter One Pen', pct:'5.98%', sales:'3,506', impressions:'4', clicks:1, orders:0.50, units:1, ctr:'25.00%', cvr:'50.00%', avgOrder:'7,012.00', buyers:1 },
+        { id:'42152758821', name:'GoldenGreen Coco Coir ขุยมะพร้าวพรีเมี่ยม 100% ขนาด 35 ลิตร', pct:'4.80%', sales:'2,815', impressions:'15', clicks:6, orders:3.50, units:12, ctr:'40.00%', cvr:'58.33%', avgOrder:'804.29', buyers:1 },
+        { id:'24145644403', name:'KNAAP BASIC ขุยมะพร้าวแท้ 100% ขนาด 55 ลิตร ใช้งานง่าย', pct:'4.55%', sales:'2,665', impressions:'21', clicks:6, orders:8, units:15, ctr:'28.57%', cvr:'133.33%', avgOrder:'333.12', buyers:3 },
+      ],
+    },
+  },
+
+  // ===== เพิ่มเดือนใหม่ที่นี่ =====
+  // "2026-06": {
+  //   label: "มิถุนายน 2026",
+  //   short: "มิ.ย. 26",
+  //   shopee: { ... },
+  //   lazada: { ... },
+  //   facebook: { ... }
+  // },
+
+};
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function fmt(n, decimals=0) {
+  if (n === null || n === undefined) return '-';
+  return Number(n).toLocaleString('th-TH', {minimumFractionDigits: decimals, maximumFractionDigits: decimals});
+}
+function changeHtml(val, suffix='%') {
+  if (val === null || val === undefined) return '';
+  const cls = val >= 0 ? 'badge-up' : 'badge-down';
+  const sign = val >= 0 ? '▲' : '▼';
+  return `<span class="${cls}">${sign} ${Math.abs(val).toFixed(1)}${suffix}</span>`;
+}
+
+let charts = {};
+function destroyCharts() {
+  Object.values(charts).forEach(c => { if(c) c.destroy(); });
+  charts = {};
+}
+
+// ============================================================
+// PRODUCT TABLE HELPER
+// ============================================================
+function renderProductTable(products, type) {
+  const rankClass = ['gold','silver','bronze','',''];
+  const fillClass = type === 'video' ? 'video' : type === 'partner' ? 'partner' : '';
+  const maxPct = Math.max(...products.map(p => parseFloat(p.pct)));
+  return `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:32px">#</th>
+          <th>ชื่อสินค้า</th>
+          <th class="td-num">สัดส่วน</th>
+          <th class="td-num">ยอดขาย (฿)</th>
+          <th class="td-num">คลิก</th>
+          <th class="td-num">คำสั่งซื้อ</th>
+          <th class="td-num">CTR</th>
+          <th class="td-num">Conv.</th>
+          <th class="td-num">ยอดขายเฉลี่ย (฿)</th>
+          <th class="td-num">ผู้ซื้อ</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${products.map((p, i) => `
+          <tr>
+            <td><span class="rank-badge ${rankClass[i]}">${i+1}</span></td>
+            <td class="product-name-cell">
+              <div class="product-name-short">${p.name}</div>
+              <div class="product-id">ID: ${p.id}</div>
+            </td>
+            <td class="td-num">
+              <div class="pct-bar-wrap">
+                <div class="pct-bar-bg">
+                  <div class="pct-bar-fill ${fillClass}" style="width:${(parseFloat(p.pct)/maxPct*100).toFixed(0)}%"></div>
+                </div>
+                <span style="font-weight:700;color:#1a1a2e;min-width:42px">${p.pct}</span>
+              </div>
+            </td>
+            <td class="td-num"><b>${p.sales}</b></td>
+            <td class="td-num">${fmt(p.clicks)}</td>
+            <td class="td-num">${typeof p.orders === 'number' ? p.orders.toFixed(0) : p.orders}</td>
+            <td class="td-num">${p.ctr}</td>
+            <td class="td-num">${p.cvr}</td>
+            <td class="td-num">${p.avgOrder}</td>
+            <td class="td-num">${p.buyers}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function switchProductTab(name, btn) {
+  document.querySelectorAll('.product-section').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.product-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById('ptab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ============================================================
+// RENDER TABS
+// ============================================================
+function renderTabs(activeKey) {
+  const container = document.getElementById('monthTabs');
+  const keys = Object.keys(ALL_DATA).sort().reverse();
+  container.innerHTML = keys.map(k => `
+    <button class="month-tab ${k === activeKey ? 'active' : ''}"
+            onclick="switchMonth('${k}')">
+      ${ALL_DATA[k].label}
+    </button>
+  `).join('') + `
+    <button class="month-tab add-month" onclick="showAddMonthHint()">
+      ＋ เพิ่มเดือน
+    </button>
+  `;
+}
+
+// ============================================================
+// RENDER MAIN
+// ============================================================
+function renderMain(key) {
+  const d = ALL_DATA[key];
+  if (!d) return;
+
+  destroyCharts();
+  document.getElementById('activePeriod').textContent = d.label;
+
+  const sp = d.shopee.summary;
+  const lz = d.lazada.summary;
+  const fb = d.facebook;
+  const totalSales = sp.totalSales + lz.totalSales;
+
+  const html = `
+    <!-- KPI ROW -->
+    <div class="section-title">📈 ภาพรวมยอดขาย · ${d.label}</div>
+    <div class="kpi-grid">
+      <div class="kpi-card combined">
+        <div class="kpi-platform combined">🏆 ยอดขายรวมทุกแพลตฟอร์ม</div>
+        <div class="kpi-value">฿${fmt(totalSales)}</div>
+        <div class="kpi-sub">Shopee + Lazada</div>
+      </div>
+      <div class="kpi-card shopee">
+        <div class="kpi-platform shopee">🛍 Shopee</div>
+        <div class="kpi-value">฿${fmt(sp.totalSales)}</div>
+        <div class="kpi-sub">${fmt(sp.totalOrders)} คำสั่งซื้อ · Conv. ${sp.conversionRate}</div>
+      </div>
+      <div class="kpi-card lazada">
+        <div class="kpi-platform lazada">🛒 Lazada</div>
+        <div class="kpi-value">฿${fmt(lz.totalSales,2)}</div>
+        <div class="kpi-sub">${fmt(lz.orders)} คำสั่งซื้อ · Conv. ${lz.conversionRate}</div>
+      </div>
+      <div class="kpi-card facebook">
+        <div class="kpi-platform facebook">📘 Facebook</div>
+        <div class="kpi-value">${fmt(fb.reach)}</div>
+        <div class="kpi-sub">Reach · ผู้ชม ${fmt(fb.audience)} คน ${changeHtml(fb.audienceChange)}</div>
+      </div>
+    </div>
+
+    <!-- PLATFORM DETAIL -->
+    <div class="section-title">🏪 รายละเอียดแต่ละแพลตฟอร์ม</div>
+    <div class="platform-row">
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon shopee">🛍</div>
+          <div>
+            <div class="platform-name" style="color:#ee4d2d">Shopee</div>
+            <div class="platform-period">${d.label}</div>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-item">
+            <div class="metric-item-label">ยอดขายทั้งหมด</div>
+            <div class="metric-item-value" style="font-size:14px">฿${fmt(sp.totalSales)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">คำสั่งซื้อ</div>
+            <div class="metric-item-value">${fmt(sp.totalOrders)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ยอดขายเฉลี่ย/ออเดอร์</div>
+            <div class="metric-item-value">฿${fmt(sp.avgOrderValue,0)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ผู้เยี่ยมชม</div>
+            <div class="metric-item-value">${fmt(sp.visitors)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">อัตราการซื้อ</div>
+            <div class="metric-item-value">${sp.conversionRate}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ผู้ซื้อใหม่</div>
+            <div class="metric-item-value">${fmt(sp.newBuyers)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ผู้ซื้อเดิม</div>
+            <div class="metric-item-value">${fmt(sp.repeatBuyers)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">อัตราซื้อซ้ำ</div>
+            <div class="metric-item-value">${sp.repeatRate}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ยกเลิก</div>
+            <div class="metric-item-value">${fmt(sp.cancelledOrders)} ออเดอร์</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="platform-section">
+        <div class="platform-header">
+          <div class="platform-icon lazada">🛒</div>
+          <div>
+            <div class="platform-name" style="color:#0f146b">Lazada</div>
+            <div class="platform-period">${d.label}</div>
+          </div>
+        </div>
+        <div class="metric-grid">
+          <div class="metric-item">
+            <div class="metric-item-label">ยอดขายทั้งหมด</div>
+            <div class="metric-item-value" style="font-size:14px">฿${fmt(lz.totalSales,0)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">คำสั่งซื้อ</div>
+            <div class="metric-item-value">${fmt(lz.orders)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ยอดขายเฉลี่ย/ออเดอร์</div>
+            <div class="metric-item-value">฿${fmt(lz.avgOrderValue,0)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ผู้เข้าชม</div>
+            <div class="metric-item-value">${fmt(lz.visitors)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">อัตราการซื้อ</div>
+            <div class="metric-item-value">${lz.conversionRate}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ผู้ซื้อ</div>
+            <div class="metric-item-value">${fmt(lz.buyers)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">มูลค่า/ผู้เข้าชม</div>
+            <div class="metric-item-value">฿${fmt(lz.valuePerVisitor,2)}</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">สินค้าที่ขายได้</div>
+            <div class="metric-item-value">${fmt(lz.unitsSold)} ชิ้น</div>
+          </div>
+          <div class="metric-item">
+            <div class="metric-item-label">ยกเลิก</div>
+            <div class="metric-item-value">฿${fmt(lz.cancelledSales,0)}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="section-title">📉 ยอดขายรายวัน</div>
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">ยอดขายรายวัน Shopee vs Lazada (฿)</div>
+        <div class="chart-wrap"><canvas id="chartSales" height="220"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">สัดส่วนยอดขาย</div>
+        <div class="chart-wrap"><canvas id="chartPie" height="220"></canvas></div>
+      </div>
+    </div>
+
+    <div class="chart-row">
+      <div class="chart-box">
+        <div class="chart-title">จำนวนคำสั่งซื้อรายวัน (ออเดอร์)</div>
+        <div class="chart-wrap"><canvas id="chartOrders" height="200"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">ผู้เยี่ยมชมรายวัน (คน)</div>
+        <div class="chart-wrap"><canvas id="chartVisitors" height="200"></canvas></div>
+      </div>
+    </div>
+
+    <!-- FACEBOOK -->
+    <div class="section-title">📘 Facebook พฤษภาคม · ภาพรวม</div>
+    <div class="fb-grid">
+      <div class="fb-card">
+        <div class="fb-card-label">👁 ยอดดู (Reach)</div>
+        <div class="fb-card-value">${fmt(fb.reach)}</div>
+        <div class="fb-card-change">${changeHtml(fb.reachChange)} เทียบเดือนก่อน</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">👥 ผู้ชม</div>
+        <div class="fb-card-value">${fmt(fb.audience)}</div>
+        <div class="fb-card-change">${changeHtml(fb.audienceChange)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">💬 การมีส่วนร่วม (Interactions)</div>
+        <div class="fb-card-value">${fmt(fb.interactions)}</div>
+        <div class="fb-card-change">${changeHtml(fb.interactionsChange)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">🖱 คลิก</div>
+        <div class="fb-card-value">${fmt(fb.clicks)}</div>
+        <div class="fb-card-change">${changeHtml(fb.clicksChange)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">💰 Paid Reach</div>
+        <div class="fb-card-value">${fmt(fb.adReach)}</div>
+        <div class="fb-card-change">Organic: ${fmt(fb.organicReach)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">➕ ผู้ติดตามใหม่</div>
+        <div class="fb-card-value">${fmt(fb.newFollowers)}</div>
+        <div class="fb-card-change">${changeHtml(fb.newFollowersChange)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">▶ รับชม 3 วินาที</div>
+        <div class="fb-card-value">${fmt(fb.watchTime3s)}</div>
+        <div class="fb-card-change">${changeHtml(fb.watchTime3sChange)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">⏱ เวลารับชมรวม</div>
+        <div class="fb-card-value" style="font-size:18px">${fb.watchDuration}</div>
+        <div class="fb-card-change">${changeHtml(fb.watchDurationChange)}</div>
+      </div>
+      <div class="fb-card">
+        <div class="fb-card-label">🛒 การซื้อจากโฆษณา</div>
+        <div class="fb-card-value">${fmt(fb.conversions.purchases)}</div>
+        <div class="fb-card-change">ผู้ติดต่อใหม่: ${fmt(fb.newContacts)} ${changeHtml(fb.newContactsChange)}</div>
+      </div>
+    </div>
+
+    <!-- FUNNEL -->
+    <div class="section-title">🔀 Conversion Funnel (โฆษณา Facebook)</div>
+    <div class="funnel-row">
+      <div class="funnel-step">
+        <div class="funnel-label">จำนวนคลิก</div>
+        <div class="funnel-value">${fmt(fb.conversions.adClicks)}</div>
+      </div>
+      <div class="funnel-arrow">→<div class="funnel-rate">${fb.conversions.messagesRate}</div></div>
+      <div class="funnel-step">
+        <div class="funnel-label">ส่งข้อความ</div>
+        <div class="funnel-value">${fmt(fb.conversions.messages)}</div>
+      </div>
+      <div class="funnel-arrow">→<div class="funnel-rate">${fb.conversions.leadsRate}</div></div>
+      <div class="funnel-step">
+        <div class="funnel-label">ลูกค้าเป้าหมาย</div>
+        <div class="funnel-value">${fmt(fb.conversions.leads)}</div>
+      </div>
+      <div class="funnel-arrow">→<div class="funnel-rate"></div></div>
+      <div class="funnel-step">
+        <div class="funnel-label">การซื้อ</div>
+        <div class="funnel-value">${fmt(fb.conversions.purchases)}</div>
+      </div>
+    </div>
+
+    <!-- SHOPEE PRODUCT SHARE SECTION -->
+    <div class="section-title">🛍 Shopee · ส่วนแบ่งรายการสินค้า (คำสั่งซื้อทั้งหมด)</div>
+
+    <!-- Source summary cards -->
+    <div class="source-summary-grid">
+      <div class="source-card">
+        <div class="source-card-label">📄 หน้ารายละเอียดสินค้า</div>
+        <div class="source-card-value">฿${fmt(d.shopeeProductShare.summary.detail)}</div>
+        <div class="source-card-pct">${((d.shopeeProductShare.summary.detail/d.shopeeProductShare.summary.total)*100).toFixed(1)}% ของยอดขายรวม</div>
+      </div>
+      <div class="source-card video">
+        <div class="source-card-label">🎬 วิดีโอของร้านค้า</div>
+        <div class="source-card-value">฿${fmt(d.shopeeProductShare.summary.video)}</div>
+        <div class="source-card-pct">${((d.shopeeProductShare.summary.video/d.shopeeProductShare.summary.total)*100).toFixed(1)}% ของยอดขายรวม</div>
+      </div>
+      <div class="source-card partner">
+        <div class="source-card-label">🤝 พาร์ทเนอร์</div>
+        <div class="source-card-value">฿${fmt(d.shopeeProductShare.summary.partner)}</div>
+        <div class="source-card-pct">${((d.shopeeProductShare.summary.partner/d.shopeeProductShare.summary.total)*100).toFixed(1)}% ของยอดขายรวม</div>
+      </div>
+      <div class="source-card ads">
+        <div class="source-card-label">📢 Shopee Ads</div>
+        <div class="source-card-value">฿${fmt(d.shopeeProductShare.summary.ads)}</div>
+        <div class="source-card-pct">${((d.shopeeProductShare.summary.ads/d.shopeeProductShare.summary.total)*100).toFixed(1)}% ของยอดขายรวม</div>
+      </div>
+    </div>
+
+    <!-- Source donut + product tabs -->
+    <div class="chart-row" style="margin-bottom:20px">
+      <div class="chart-box">
+        <div class="chart-title">สัดส่วนยอดขายตามแหล่งที่มา (฿)</div>
+        <div class="chart-wrap"><canvas id="chartSourcePie" height="260"></canvas></div>
+      </div>
+      <div class="chart-box">
+        <div class="chart-title">ยอดขาย Top 5 สินค้า (หน้ารายละเอียด)</div>
+        <div class="chart-wrap"><canvas id="chartTopProducts" height="260"></canvas></div>
+      </div>
+    </div>
+
+    <!-- Product tabs -->
+    <div class="chart-box" style="margin-bottom:28px">
+      <div class="product-tabs">
+        <button class="product-tab active" onclick="switchProductTab('detail',this)">📄 หน้ารายละเอียดสินค้า (Top 5)</button>
+        <button class="product-tab video" onclick="switchProductTab('video',this)">🎬 วิดีโอของร้านค้า (Top 5)</button>
+        <button class="product-tab partner" onclick="switchProductTab('partner',this)">🤝 พาร์ทเนอร์ (Top 5)</button>
+      </div>
+
+      <!-- Detail products -->
+      <div class="product-section active" id="ptab-detail">
+        <div class="product-table-wrap">
+          ${renderProductTable(d.shopeeProductShare.detail, 'detail')}
+        </div>
+      </div>
+
+      <!-- Video products -->
+      <div class="product-section" id="ptab-video">
+        <div class="product-table-wrap">
+          ${d.shopeeProductShare.video.length ? renderProductTable(d.shopeeProductShare.video, 'video') : '<div class="no-data"><div class="icon">📹</div><p>ไม่มีข้อมูลยอดขายจาก Live ในเดือนนี้</p></div>'}
+        </div>
+      </div>
+
+      <!-- Partner products -->
+      <div class="product-section" id="ptab-partner">
+        <div class="product-table-wrap">
+          ${renderProductTable(d.shopeeProductShare.partner, 'partner')}
+        </div>
+      </div>
+    </div>
+
+    <!-- DAILY TABLE -->
+    <div class="section-title">📋 ตารางยอดขายรายวัน</div>
+    <div class="chart-box" style="margin-bottom:28px">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>วันที่</th>
+              <th class="td-num">Shopee ยอดขาย (฿)</th>
+              <th class="td-num">Shopee ออเดอร์</th>
+              <th class="td-num">Shopee ผู้ชม</th>
+              <th class="td-num">Lazada ยอดขาย (฿)</th>
+              <th class="td-num">Lazada ออเดอร์</th>
+              <th class="td-num">Lazada ผู้ชม</th>
+              <th class="td-num">รวม (฿)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${d.shopee.daily.map((row, i) => {
+              const lzRow = d.lazada.daily[i] || {};
+              const total = row.s + (lzRow.s || 0);
+              const maxSp = Math.max(...d.shopee.daily.map(r=>r.s));
+              const barW = Math.round(row.s / maxSp * 60);
+              const maxLz = Math.max(...d.lazada.daily.map(r=>r.s));
+              const barWlz = Math.round((lzRow.s||0) / maxLz * 60);
+              return `<tr>
+                <td><b>${row.d}</b></td>
+                <td class="td-num"><span class="bar-inline" style="width:${barW}px"></span>${fmt(row.s)}</td>
+                <td class="td-num">${fmt(row.o)}</td>
+                <td class="td-num">${fmt(row.v)}</td>
+                <td class="td-num"><span class="bar-inline lz" style="width:${barWlz}px"></span>${fmt(lzRow.s||0)}</td>
+                <td class="td-num">${fmt(lzRow.o||0)}</td>
+                <td class="td-num">${fmt(lzRow.v||0)}</td>
+                <td class="td-num"><b>฿${fmt(total)}</b></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('mainContent').innerHTML = html;
+
+  // Draw charts
+  setTimeout(() => drawCharts(d), 50);
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function drawCharts(d) {
+  const labels = d.shopee.daily.map(r => r.d);
+  const spSales = d.shopee.daily.map(r => r.s);
+  const lzSales = d.lazada.daily.map(r => r.s);
+  const spOrders = d.shopee.daily.map(r => r.o);
+  const lzOrders = d.lazada.daily.map(r => r.o);
+  const spVisitors = d.shopee.daily.map(r => r.v);
+  const lzVisitors = d.lazada.daily.map(r => r.v);
+
+  // Sales line chart
+  const ctxSales = document.getElementById('chartSales');
+  if (ctxSales) {
+    charts.sales = new Chart(ctxSales, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Shopee (฿)',
+            data: spSales,
+            borderColor: '#ee4d2d',
+            backgroundColor: 'rgba(238,77,45,0.08)',
+            borderWidth: 2.5,
+            pointRadius: 3,
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: 'Lazada (฿)',
+            data: lzSales,
+            borderColor: '#0f146b',
+            backgroundColor: 'rgba(15,20,107,0.06)',
+            borderWidth: 2.5,
+            pointRadius: 3,
+            tension: 0.3,
+            fill: true,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { font: { family: 'Segoe UI' } } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: ฿${ctx.parsed.y.toLocaleString('th-TH')}`
+            }
+          }
+        },
+        scales: {
+          y: {
+            grid: { color: '#f0f0f0' },
+            ticks: {
+              callback: v => '฿' + (v >= 1000 ? (v/1000).toFixed(0)+'K' : v)
+            }
+          },
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 16 } }
+        }
+      }
+    });
+  }
+
+  // Pie chart
+  const ctxPie = document.getElementById('chartPie');
+  if (ctxPie) {
+    const spTotal = d.shopee.summary.totalSales;
+    const lzTotal = d.lazada.summary.totalSales;
+    charts.pie = new Chart(ctxPie, {
+      type: 'doughnut',
+      data: {
+        labels: ['Shopee', 'Lazada'],
+        datasets: [{
+          data: [spTotal, lzTotal],
+          backgroundColor: ['#ee4d2d', '#0f146b'],
+          borderWidth: 3,
+          borderColor: '#fff',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom' },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ฿${ctx.parsed.toLocaleString('th-TH')} (${(ctx.parsed/(spTotal+lzTotal)*100).toFixed(1)}%)`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Orders bar chart
+  const ctxOrders = document.getElementById('chartOrders');
+  if (ctxOrders) {
+    charts.orders = new Chart(ctxOrders, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Shopee',
+            data: spOrders,
+            backgroundColor: 'rgba(238,77,45,0.75)',
+            borderRadius: 4,
+          },
+          {
+            label: 'Lazada',
+            data: lzOrders,
+            backgroundColor: 'rgba(15,20,107,0.70)',
+            borderRadius: 4,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          x: { stacked: false, grid: { display: false }, ticks: { maxTicksLimit: 16 } },
+          y: { grid: { color: '#f0f0f0' } }
+        }
+      }
+    });
+  }
+
+  // Source pie chart
+  const ctxSourcePie = document.getElementById('chartSourcePie');
+  if (ctxSourcePie && d.shopeeProductShare) {
+    const ps = d.shopeeProductShare.summary;
+    charts.sourcePie = new Chart(ctxSourcePie, {
+      type: 'doughnut',
+      data: {
+        labels: ['หน้ารายละเอียดสินค้า', 'วิดีโอของร้านค้า', 'พาร์ทเนอร์', 'Shopee Ads', 'Live'],
+        datasets: [{
+          data: [ps.detail, ps.video, ps.partner, ps.ads, ps.live],
+          backgroundColor: ['#ee4d2d', '#805ad5', '#38a169', '#f6ad55', '#e53e3e'],
+          borderWidth: 3, borderColor: '#fff',
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12 }, boxWidth: 14 } },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.label}: ฿${ctx.parsed.toLocaleString('th-TH')} (${(ctx.parsed/ps.total*100).toFixed(1)}%)`
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Top products bar chart
+  const ctxTopProducts = document.getElementById('chartTopProducts');
+  if (ctxTopProducts && d.shopeeProductShare) {
+    const prods = d.shopeeProductShare.detail;
+    const shortNames = prods.map(p => p.name.length > 28 ? p.name.substring(0,28)+'…' : p.name);
+    charts.topProducts = new Chart(ctxTopProducts, {
+      type: 'bar',
+      data: {
+        labels: shortNames,
+        datasets: [{
+          label: 'ยอดขาย (฿)',
+          data: prods.map(p => parseInt(p.sales.replace(/,/g,''))),
+          backgroundColor: ['#ee4d2d','#f6ad55','#68d391','#4299e1','#b794f4'],
+          borderRadius: 6,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ฿${ctx.parsed.x.toLocaleString('th-TH')} (${prods[ctx.dataIndex].pct})`
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#f0f0f0' },
+            ticks: { callback: v => '฿'+(v>=1000?(v/1000).toFixed(0)+'K':v) }
+          },
+          y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+        }
+      }
+    });
+  }
+
+  // Visitors line chart
+  const ctxVisitors = document.getElementById('chartVisitors');
+  if (ctxVisitors) {
+    charts.visitors = new Chart(ctxVisitors, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Shopee',
+            data: spVisitors,
+            borderColor: '#ee4d2d',
+            backgroundColor: 'rgba(238,77,45,0.08)',
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.3,
+            fill: true,
+          },
+          {
+            label: 'Lazada',
+            data: lzVisitors,
+            borderColor: '#0f146b',
+            backgroundColor: 'rgba(15,20,107,0.06)',
+            borderWidth: 2,
+            pointRadius: 2,
+            tension: 0.3,
+            fill: true,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+          y: { grid: { color: '#f0f0f0' } },
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 16 } }
+        }
+      }
+    });
+  }
+}
+
+// ============================================================
+// SWITCH MONTH
+// ============================================================
+let currentKey = null;
+function switchMonth(key) {
+  if (!ALL_DATA[key]) return;
+  currentKey = key;
+  renderTabs(key);
+  renderMain(key);
+}
+
+function showAddMonthHint() {
+  alert('วิธีเพิ่มข้อมูลเดือนใหม่:\n\n1. เปิดไฟล์ HTML นี้ด้วย Text Editor\n2. หาส่วน "เพิ่มเดือนใหม่ที่นี่" ในโค้ด JavaScript\n3. คัดลอก block ของ "2026-05" แล้ววางด้านล่าง\n4. เปลี่ยน key เป็นเดือนใหม่ เช่น "2026-06"\n5. อัปเดตข้อมูลให้ถูกต้อง แล้วบันทึกไฟล์');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+const firstKey = Object.keys(ALL_DATA).sort().reverse()[0];
+switchMonth(firstKey);
+</script>
+</body>
+</html>
